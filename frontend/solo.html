@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Solo Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative">
+  
+  <!-- Navigation Header -->
+  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center shadow-lg">
+    <div class="flex items-center gap-4">
+      <a href="dashboard.html" class="text-xs text-slate-400 hover:text-white transition">&larr; Back to Home</a>
+      <h1 class="text-lg font-black text-indigo-500 tracking-wider">SOLO FOCUS</h1>
+    </div>
+  </header>
+
+  <!-- MOBILE WORKSPACE TABS (Only visible on mobile screens) -->
+  <div class="md:hidden flex bg-slate-900 border-b border-slate-800 p-2 text-xs font-bold w-full shadow-lg">
+    <button id="tabDashboard" onclick="switchMobileTab('dashboard')" class="flex-1 text-center py-2.5 rounded-lg text-indigo-400 bg-slate-950 border border-slate-800 transition focus:outline-none">
+      My Dashboard
+    </button>
+    <button id="tabForm" onclick="switchMobileTab('form')" class="flex-1 text-center py-2.5 rounded-lg text-slate-400 transition focus:outline-none ml-1">
+      + New Task
+    </button>
+  </div>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl w-full mx-auto p-6 space-y-6 flex-grow">
+    
+    <!-- AI PERSONAL ADVISOR BANNER -->
+    <div class="bg-gradient-to-r from-indigo-950/60 to-slate-900 border border-indigo-500/40 p-5 rounded-2xl flex items-center gap-4 shadow-xl">
+      <div class="h-10 w-10 bg-indigo-500/10 text-indigo-400 flex items-center justify-center rounded-xl text-xl animate-bounce">🤖</div>
+      <div>
+        <h4 class="text-xxs uppercase tracking-wider text-indigo-400 font-black">AI Productivity Advisor</h4>
+        <p id="aiCoachingText" class="text-xs text-slate-300 font-semibold mt-1">Analyzing your checklist statistics to generate focused advice...</p>
+      </div>
+    </div>
+
+    <!-- Rollover Warning Banner -->
+    <div id="rolloverBanner" class="hidden bg-amber-950/40 border border-amber-800 text-amber-200 text-xs p-4 rounded-xl flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">⚠️</span>
+        <div>
+          <p class="font-bold">Unfinished Tasks Found</p>
+          <p class="text-slate-400">You have outstanding tasks from previous days. Run the rollover manager to shift them automatically.</p>
+        </div>
+      </div>
+      <button onclick="runRollover()" class="bg-amber-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded transition">Run Rollover</button>
+    </div>
+
+    <!-- Responsive Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Task Form Container (Default: Hidden on mobile, always visible on Desktop) -->
+      <div id="formContainer" class="hidden md:block md:col-span-1 bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 shadow-lg">
+        <h3 class="font-bold text-slate-200 text-sm uppercase tracking-wider">New Daily Task</h3>
+        <form id="taskForm" class="space-y-4">
+          <div>
+            <label class="text-xxs font-semibold uppercase text-slate-400">Title</label>
+            <input id="title" type="text" placeholder="Title..." required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+          </div>
+          <div>
+            <label class="text-xxs font-semibold uppercase text-slate-400">Description</label>
+            <textarea id="desc" placeholder="Details..." class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition" rows="2"></textarea>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xxs font-semibold uppercase text-slate-400">Priority</label>
+              <select id="priority" class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="text-xxs font-semibold uppercase text-slate-400">Repeat Schedule</label>
+              <select id="taskRecurrence" class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+                <option value="once">Only for Today (Once)</option>
+                <option value="daily">Every Day (Daily Routine)</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="text-xxs font-semibold uppercase text-slate-400">Alert Style</label>
+              <select id="taskAlertType" class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+                <option value="alarm">Ringing Alarm & Sound</option>
+                <option value="notification">Silent Notification Only</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="text-xxs font-semibold uppercase text-slate-400">Set Alarm (Date & Time)</label>
+              <input id="taskDueDate" type="datetime-local" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-lg text-xs transition shadow-md">
+            Create Task
+          </button>
+        </form>
+      </div>
+
+      <!-- Checklist Dashboard Container (Always visible on Desktop, shown by default on mobile) -->
+      <div id="dashboardContainer" class="block md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+        <h3 class="font-bold text-slate-200 mb-4">My Dashboard</h3>
+        <div id="taskList" class="space-y-3">
+          <p class="text-slate-500 text-sm text-center py-6">Loading tasks...</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ALARM RINGING OVERLAY MODAL -->
+  <div id="alarmModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-indigo-500 max-w-sm w-full p-6 rounded-2xl text-center space-y-5 shadow-2xl animate-pulse">
+      <div class="text-5xl animate-bounce">⏰</div>
+      <div>
+        <h3 class="text-lg font-black text-indigo-400 uppercase tracking-widest">ALARM ACTIVE</h3>
+        <p id="alarmTaskTitle" class="text-sm font-semibold text-white mt-1">Task Title</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="dismissAlarm()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 font-bold py-2.5 rounded-lg text-xs shadow-md transition">
+          Dismiss
+        </button>
+        <button onclick="snoozeAlarm()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-bold py-2.5 rounded-lg text-xs transition">
+          Snooze (5m)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/solo.js"></script>
+</body>
+</html>

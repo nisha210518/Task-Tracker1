@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Group Workspace</title>
+  <!-- Load Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load Chart.js for Burn-down Performance and Gantt Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative">
+  
+  <!-- Navigation Header -->
+  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center shadow-md">
+    <div class="flex items-center gap-4">
+      <a href="dashboard.html" class="text-xs text-slate-400 hover:text-white transition">&larr; Back to Home</a>
+      <h1 class="text-lg font-black text-emerald-500 tracking-wider">TEAM WORKSPACE</h1>
+    </div>
+  </header>
+
+  <!-- Main Grid Workspace -->
+  <main class="max-w-6xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
+    
+    <!-- Left Column: Start and Select Groups -->
+    <div class="lg:col-span-1 space-y-6">
+      
+      <!-- Start Group Card -->
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 shadow-lg">
+        <h3 class="font-bold text-slate-200 text-sm uppercase tracking-wider">Start a Group</h3>
+        <div class="space-y-3">
+          <input id="grpName" type="text" placeholder="Group Name..." class="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+          <button onclick="createGroup()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-lg transition shadow">
+            Create Group
+          </button>
+        </div>
+      </div>
+
+      <!-- My Groups List -->
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+        <h3 class="font-bold text-slate-200 text-sm uppercase tracking-wider mb-4">My Groups</h3>
+        <div id="groupsList" class="space-y-2 max-h-80 overflow-y-auto pt-1">
+          <p class="text-xs text-slate-500 text-center py-4">No groups yet.</p>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Right Columns: Active Collaboration Panel (Hidden until a group is clicked) -->
+    <div id="activeWorkspace" class="hidden lg:col-span-2 space-y-6 animate-fade-in">
+      
+      <!-- Group Info, Members, and Integrations -->
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6 shadow-lg">
+        <div class="flex flex-col justify-between h-full space-y-4">
+          <div class="flex justify-between items-start gap-4">
+            <div>
+              <h2 id="activeGroupName" class="text-2xl font-black text-emerald-400 font-sans">Group Name</h2>
+              <p class="text-xs text-slate-400 mt-1 font-mono">Invite Code: <span id="activeInviteCode" class="font-mono text-indigo-400 select-all font-semibold">------</span></p>
+            </div>
+            <!-- Delete Group Button (Only visible to Group Owner) -->
+            <button id="deleteGroupBtn" onclick="deleteGroup()" class="hidden bg-red-950/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-900/40 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition">
+              Delete Group
+            </button>
+          </div>
+          
+          <div>
+            <h4 class="text-xs uppercase text-slate-500 font-bold mb-2">Members</h4>
+            <div id="membersList" class="flex flex-wrap gap-2"></div>
+          </div>
+          
+          <!-- DISCORD WEBHOOK INTEGRATION FORM (Visible to Admin only) -->
+          <div id="webhookAdminPanel" class="hidden bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 mt-2">
+            <h4 class="text-[10px] uppercase text-indigo-400 font-bold">Discord Integration Webhook</h4>
+            <div class="flex gap-2">
+              <input id="webhookInput" type="text" placeholder="Paste Discord Webhook URL..." class="flex-grow p-2 bg-slate-800 border border-slate-700 rounded-lg text-xxs text-white focus:outline-none">
+              <button onclick="saveWebhookUrl()" class="bg-emerald-600 hover:bg-emerald-700 text-xxs px-3 py-1.5 rounded-lg font-bold transition">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Member (Search Username) -->
+        <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3 flex flex-col justify-between">
+          <div>
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wide">Invite Teammate</h4>
+            <p class="text-[10px] text-slate-500 mt-1">Add teammate directly into this space by searching their username.</p>
+          </div>
+          <div id="addError" class="hidden text-xxs text-red-400 bg-red-950/20 border border-red-900/30 p-2 rounded"></div>
+          <div class="flex gap-2">
+            <input id="searchUsername" type="text" placeholder="Enter username..." class="flex-grow p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+            <button onclick="addMember()" class="bg-indigo-600 hover:bg-indigo-700 px-4 rounded-lg text-xs font-bold transition">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance & Gantt Chart Visualizer Card -->
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 id="chartTitle" class="font-bold text-slate-200 text-sm uppercase tracking-wider">Team Burn-down Performance</h3>
+          
+          <!-- Selector Tab accessible to all group members -->
+          <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px] font-bold">
+            <button id="btnBurndown" onclick="switchChart('burndown')" class="px-3 py-1.5 rounded-md text-emerald-400 bg-slate-900 border border-slate-800 transition focus:outline-none">
+              Burndown
+            </button>
+            <button id="btnGantt" onclick="switchChart('gantt')" class="px-3 py-1.5 rounded-md text-slate-400 hover:text-slate-200 transition ml-1 focus:outline-none">
+              Gantt Timeline
+            </button>
+          </div>
+        </div>
+        
+        <div class="h-60 w-full relative">
+          <canvas id="burndownChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Task Assignment and Task Tracker List -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Assign Task Card -->
+        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+          <h3 class="font-bold text-slate-200 text-sm uppercase tracking-wider">Assign New Task</h3>
+          <form id="groupTaskForm" onsubmit="submitGroupTask(event)" class="space-y-4">
+            <div>
+              <label class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Task Title</label>
+              <input id="taskTitle" type="text" placeholder="What needs to be done?..." required class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Assignee</label>
+              <select id="assigneeSelect" class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition">
+                <option value="">Assign to Me</option>
+              </select>
+            </div>
+            
+            <!-- Timeline Date selections for Gantt Charts -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Start Day (1-6)</label>
+                <select id="taskStartDay" class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition">
+                  <option value="1">Day 1</option>
+                  <option value="2">Day 2</option>
+                  <option value="3">Day 3</option>
+                  <option value="4">Day 4</option>
+                  <option value="5">Day 5</option>
+                  <option value="6">Day 6</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 uppercase font-bold block mb-1">End Day (1-6)</label>
+                <select id="taskEndDay" class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition">
+                  <option value="1">Day 1</option>
+                  <option value="2">Day 2</option>
+                  <option value="3" selected>Day 3</option>
+                  <option value="4">Day 4</option>
+                  <option value="5">Day 5</option>
+                  <option value="6">Day 6</option>
+                </select>
+              </div>
+            </div>
+            
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition shadow">
+              Assign Task
+            </button>
+          </form>
+        </div>
+
+        <!-- Task List Area -->
+        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col h-full">
+          <h3 class="font-bold text-slate-200 text-sm uppercase tracking-wider mb-4">Workspace Tasks</h3>
+          <div id="groupTaskList" class="space-y-3 flex-grow overflow-y-auto pr-1" style="max-height: 230px;">
+            <p class="text-xs text-slate-500 text-center py-6">No tasks assigned yet.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FLOATING REAL-TIME TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 space-y-3 z-50 pointer-events-none"></div>
+
+  <!-- Load Interactive Script -->
+  <script src="js/group.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TaskFlow - Sign Up</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen">
+  <div class="max-w-md w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl">
+    <h1 class="text-center font-black text-2xl tracking-wider text-indigo-500 mb-6">CREATE ACCOUNT</h1>
+    <div id="errorBox" class="hidden bg-red-950/40 text-red-300 border border-red-800 text-xs p-3 rounded-lg mb-4"></div>
+    <div id="successBox" class="hidden bg-emerald-950/40 text-emerald-300 border border-emerald-800 text-xs p-3 rounded-lg mb-4"></div>
+    
+    <form id="signupForm" class="space-y-4">
+      <div>
+        <label class="block text-xs uppercase text-slate-400 font-bold">Email Address</label>
+        <input id="email" type="email" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs uppercase text-slate-400 font-bold">Username</label>
+        <input id="username" type="text" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs uppercase text-slate-400 font-bold">Password</label>
+        <input id="password" type="password" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none">
+      </div>
+      <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-lg transition">Sign Up</button>
+    </form>
+    <div class="mt-4 text-center text-sm">
+      <a href="login.html" class="text-indigo-400 hover:underline">Already have an account? Log in here</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const errBox = document.getElementById("errorBox");
+      const succBox = document.getElementById("successBox");
+      
+      errBox.classList.add("hidden");
+      succBox.classList.add("hidden");
+      
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          succBox.innerText = "Registration complete! Redirecting to login page...";
+          succBox.classList.remove("hidden");
+          setTimeout(() => { window.location.href = "login.html"; }, 2000);
+        } else {
+          errBox.innerText = data.detail || "Sign up failed.";
+          errBox.classList.remove("hidden");
+        }
+      } catch (err) {
+        errBox.innerText = "Cannot connect to server.";
+        errBox.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

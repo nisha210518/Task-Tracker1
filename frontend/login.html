@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen">
+  <div class="max-w-md w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl">
+    <h1 className="text-center font-black text-2xl tracking-wider text-indigo-500 mb-6">TASKFLOW LOGIN</h1>
+    <div id="errorBox" class="hidden bg-red-950/40 text-red-300 border border-red-800 text-xs p-3 rounded-lg mb-4"></div>
+    
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-xs uppercase text-slate-400 font-bold">Email Address</label>
+        <input id="email" type="email" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-xs uppercase text-slate-400 font-bold">Password</label>
+        <input id="password" type="password" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-lg transition">Log In</button>
+    </form>
+    <div class="mt-4 text-center text-sm">
+      <a href="signup.html" class="text-indigo-400 hover:underline">New to TaskFlow? Sign up here</a>
+    </div>
+  </div>
+
+<script>
+    // Check if we are in "Add Secondary Account" mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAddingAccount = urlParams.get("add_account") === "true";
+    
+    const token = localStorage.getItem("token");
+    // Only redirect automatically if we are NOT trying to add a new account
+    if (token && !isAddingAccount) {
+      window.location.href = "dashboard.html";
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const errBox = document.getElementById("errorBox");
+      
+      errBox.classList.add("hidden");
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, username: email, password })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          // Retrieve existing accounts
+          let accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
+          
+          // Use the email prefix or a mock username if username is not returned
+          const mockUsername = email.split('@')[0];
+          
+          // Remove duplicate if already logged in with this username
+          accounts = accounts.filter(acc => acc.username !== mockUsername);
+          
+          // Set all other accounts to inactive
+          accounts.forEach(acc => acc.active = false);
+          
+          // Append the new active account
+          accounts.push({
+            username: mockUsername,
+            token: data.access_token,
+            active: true
+          });
+          
+          // Save list and sync active token
+          localStorage.setItem("taskflow_accounts", JSON.stringify(accounts));
+          localStorage.setItem("token", data.access_token);
+          
+          window.location.href = "dashboard.html";
+        } else {
+          errBox.innerText = data.detail || "Authentication failed.";
+          errBox.classList.remove("hidden");
+        }
+      } catch (err) {
+        errBox.innerText = "Cannot establish connection to server.";
+        errBox.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

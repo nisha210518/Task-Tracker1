@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TaskFlow - Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+  
+  <!-- Header with Instagram-style Account Switcher -->
+  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center shadow-lg relative">
+    <h1 class="text-xl font-black text-indigo-500 tracking-widest">TASKFLOW</h1>
+    
+    <div class="flex items-center gap-4 relative">
+      <!-- Active Account Switcher Button -->
+      <div class="relative">
+        <button onclick="toggleAccountMenu()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl border border-slate-700 transition focus:outline-none">
+          <span class="text-xs font-bold text-slate-300" id="userNameHeader">Loading...</span>
+          <span class="text-slate-500 text-xxs">&#9662;</span>
+        </button>
+        
+        <!-- Hidden Dropdown Menu (Toggle class handles visibility) -->
+        <div id="accountDropdown" class="hidden absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 space-y-1 z-50">
+          <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold px-3 py-1.5 border-b border-slate-800">Switch Account</p>
+          
+          <!-- Dynamic Accounts list will be injected here -->
+          <div id="accountsListContainer" class="space-y-0.5"></div>
+          
+          <div class="border-t border-slate-800 pt-1.5 mt-1 space-y-0.5">
+            <button onclick="addAccountRedirect()" class="w-full text-left text-xs text-indigo-400 hover:bg-slate-800 font-bold px-3 py-2 rounded-lg transition">
+              + Add Account
+            </button>
+            <button onclick="logoutActive()" class="w-full text-left text-xs text-red-400 hover:bg-slate-800 font-bold px-3 py-2 rounded-lg transition">
+              Logout Current
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow flex flex-col justify-center items-center max-w-4xl w-full mx-auto px-6 py-12">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-extrabold tracking-tight">Choose Your Workspace</h2>
+      <p class="text-sm text-slate-400 mt-2">Manage personal items or collaborate with team members</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+      <a href="solo.html" class="group bg-slate-900 hover:bg-indigo-950/20 border border-slate-800 hover:border-indigo-500/50 p-8 rounded-2xl flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 shadow-xl">
+        <div class="space-y-4">
+          <div class="h-12 w-12 bg-indigo-600/10 text-indigo-400 flex items-center justify-center rounded-xl text-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all">👤</div>
+          <h3 class="text-2xl font-bold group-hover:text-indigo-400 transition-colors">Solo Mode</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Create and track daily, weekly, and monthly tasks. Unfinished tasks automatically rollover with active priority escalations.
+          </p>
+        </div>
+        <div class="mt-6 flex items-center gap-1.5 text-xs font-bold text-indigo-400 group-hover:text-indigo-300">
+          Enter Space &rarr;
+        </div>
+      </a>
+
+      <a href="group.html" class="group bg-slate-900 hover:bg-emerald-950/20 border border-slate-800 hover:border-emerald-500/50 p-8 rounded-2xl flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 shadow-xl">
+        <div class="space-y-4">
+          <div class="h-12 w-12 bg-emerald-600/10 text-emerald-400 flex items-center justify-center rounded-xl text-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all">👥</div>
+          <h3 class="text-2xl font-bold group-hover:text-emerald-400 transition-colors">Group Workspace</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Form collaborative workspaces, search and invite members by username, assign project tasks, and monitor efficiency metrics on Burn-down charts.
+          </p>
+        </div>
+        <div class="mt-6 flex items-center gap-1.5 text-xs font-bold text-emerald-400 group-hover:text-emerald-300">
+          Enter Space &rarr;
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "login.html";
+
+    async function loadHeader() {
+      const res = await fetch("/api/users/me", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById("userNameHeader").innerText = `@${data.username}`;
+        
+        // Ensure local accounts list exists and is synced with database username
+        syncAccountsList(data.username);
+        renderDropdownList();
+      } else {
+        logoutAll();
+      }
+    }
+
+    // Sync current logged in username with local switcher storage
+    function syncAccountsList(username) {
+      let accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
+      const exists = accounts.some(acc => acc.username === username);
+      
+      if (!exists) {
+        // If empty or missing, append current session as active
+        accounts.push({ username: username, token: token, active: true });
+      } else {
+        accounts.forEach(acc => acc.active = (acc.username === username));
+      }
+      localStorage.setItem("taskflow_accounts", JSON.stringify(accounts));
+    }
+
+    function toggleAccountMenu() {
+      const dropdown = document.getElementById("accountDropdown");
+      dropdown.classList.toggle("hidden");
+    }
+
+    function renderDropdownList() {
+      const container = document.getElementById("accountsListContainer");
+      const accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
+      const currentToken = localStorage.getItem("token");
+
+      container.innerHTML = accounts.map(acc => {
+        const isActive = acc.token === currentToken;
+        return `
+          <button onclick="switchAccount('${acc.username}')" class="w-full text-left text-xs px-3 py-2 rounded-lg flex justify-between items-center transition ${isActive ? 'bg-indigo-600/10 text-indigo-400 font-bold' : 'hover:bg-slate-800 text-slate-300'}" ${isActive ? 'disabled' : ''}>
+            <span>@${acc.username}</span>
+            ${isActive ? '<span class="text-indigo-400 text-xxs">&#9679; Active</span>' : ''}
+          </button>
+        `;
+      }).join("");
+    }
+
+    function switchAccount(username) {
+      let accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
+      accounts.forEach(acc => {
+        if (acc.username === username) {
+          acc.active = true;
+          localStorage.setItem("token", acc.token);
+        } else {
+          acc.active = false;
+        }
+      });
+      localStorage.setItem("taskflow_accounts", JSON.stringify(accounts));
+      window.location.reload();
+    }
+
+    function addAccountRedirect() {
+      window.location.href = "login.html?add_account=true";
+    }
+
+    function logoutActive() {
+      let accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
+      const currentToken = localStorage.getItem("token");
+      
+      // Filter out the active account
+      accounts = accounts.filter(acc => acc.token !== currentToken);
+      localStorage.setItem("taskflow_accounts", JSON.stringify(accounts));
+
+      if (accounts.length > 0) {
+        // Fallback to first remaining account
+        accounts[0].active = true;
+        localStorage.setItem("token", accounts[0].token);
+        localStorage.setItem("taskflow_accounts", JSON.stringify(accounts));
+        window.location.href = "dashboard.html";
+      } else {
+        logoutAll();
+      }
+    }
+
+    function logoutAll() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("taskflow_accounts");
+      window.location.href = "login.html";
+    }
+
+    // Close dropdown menu if user clicks outside of header
+    window.addEventListener("click", function(e) {
+      const dropdown = document.getElementById("accountDropdown");
+      if (dropdown && !e.target.closest("header")) {
+        dropdown.classList.add("hidden");
+      }
+    });
+
+    loadHeader();
+  </script>
+</body>
+</html>
