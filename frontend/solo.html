@@ -4,7 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TaskFlow - Solo Workspace</title>
+  <!-- Load Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load Google Fonts - Inter [1] -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Nuclear Font Enforcer: Overrides casual phone system fonts with clean, professional Inter [1] -->
+  <style>
+    body, button, select, input, textarea, div, p, h1, h2, h3, h4, span, a {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    }
+  </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative">
   
@@ -16,7 +28,7 @@
     </div>
   </header>
 
-  <!-- MOBILE WORKSPACE TABS (Only visible on mobile screens) -->
+  <!-- MOBILE WORKSPACE TABS (Only visible on mobile screens) [1] -->
   <div class="md:hidden flex bg-slate-900 border-b border-slate-800 p-2 text-xs font-bold w-full shadow-lg">
     <button id="tabDashboard" onclick="switchMobileTab('dashboard')" class="flex-1 text-center py-2.5 rounded-lg text-indigo-400 bg-slate-950 border border-slate-800 transition focus:outline-none">
       My Dashboard
@@ -53,7 +65,7 @@
     <!-- Responsive Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       
-      <!-- Task Form Container (Default: Hidden on mobile, always visible on Desktop) -->
+      <!-- Task Form Container (Default: Hidden on mobile, always visible on Desktop) [1] -->
       <div id="formContainer" class="hidden md:block md:col-span-1 bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 shadow-lg">
         <h3 class="font-bold text-slate-200 text-sm uppercase tracking-wider">New Daily Task</h3>
         <form id="taskForm" class="space-y-4">
@@ -102,9 +114,9 @@
         </form>
       </div>
 
-      <!-- Checklist Dashboard Container (Always visible on Desktop, shown by default on mobile) -->
+      <!-- Checklist Dashboard Container (Always visible on Desktop, shown by default on mobile) [1] -->
       <div id="dashboardContainer" class="block md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
-        <h3 class="font-bold text-slate-200 mb-4">My Dashboard</h3>
+        <h3 class="font-bold text-slate-200 mb-4 text-sm uppercase tracking-wider">My Dashboard</h3>
         <div id="taskList" class="space-y-3">
           <p class="text-slate-500 text-sm text-center py-6">Loading tasks...</p>
         </div>

@@ -91,8 +91,10 @@ async function loadTasks() {
 }
 
 // Form Submission
+// Form Submission (Defensive: Only clears form and updates lists on successful save)
 document.getElementById("taskForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  
   const title = document.getElementById("title").value;
   const description = document.getElementById("desc").value;
   const priority = document.getElementById("priority").value;
@@ -101,40 +103,74 @@ document.getElementById("taskForm").addEventListener("submit", async (e) => {
   const isRecurring = recurrence === "daily";
   const alertType = document.getElementById("taskAlertType").value;
   
-  await fetch("/api/tasks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-    body: JSON.stringify({ 
-      title, 
-      description, 
-      priority,
-      due_date: new Date(alarmDate).toISOString(),
-      is_recurring: isRecurring,
-      recurrence_interval: recurrence,
-      alert_type: alertType
-    })
-  });
-  
-  document.getElementById("title").value = "";
-  document.getElementById("desc").value = "";
-  document.getElementById("taskDueDate").value = "";
-  document.getElementById("taskRecurrence").value = "once";
-  document.getElementById("taskAlertType").value = "alarm";
-  
-  await loadTasks();
-  await loadAICoaching();
+  try {
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json", 
+        "Authorization": `Bearer ${token}` 
+      },
+      body: JSON.stringify({ 
+        title, 
+        description, 
+        priority,
+        due_date: new Date(alarmDate).toISOString(),
+        is_recurring: isRecurring,
+        recurrence_interval: recurrence,
+        alert_type: alertType
+      })
+    });
+    
+    if (res.ok) {
+      // ONLY CLEAR FORM IF DATABASE SAVED SUCCESSFULLY [1]
+      document.getElementById("title").value = "";
+      document.getElementById("desc").value = "";
+      document.getElementById("taskDueDate").value = "";
+      document.getElementById("taskRecurrence").value = "once";
+      document.getElementById("taskAlertType").value = "alarm";
+      
+      // Load and update the dashboard lists
+      await loadTasks();
+      await loadAICoaching();
+      
+      // Slide back to list on mobile screens [1]
+      if (window.innerWidth < 768) {
+        switchMobileTab('dashboard');
+      }
+    } else {
+      const errData = await res.json();
+      console.error("Database Save Failure:", errData);
+      alert("Database Error: " + (errData.detail || "Could not save task. Ensure your active database table contains the 'alert_type' column."));
+    }
+  } catch (err) {
+    console.error("Network connection failure:", err);
+    alert("Network Error: Unable to connect to your backend server.");
+  }
+});
 
   // AUTOMATIC REDIRECTION: If on mobile, slide back to Dashboard immediately [1]
   if (window.innerWidth < 768) {
     switchMobileTab('dashboard');
   }
-});
+
 
 // Complete Task
 async function complete(id) {
   if (ringingTaskId === id) {
     dismissAlarm();
   }
+  
+  // CANCEL NATIVE OS ALARM IF IT EXISTS (FOR APK ONLY)
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.cancel({
+        notifications: [{ id: Number(id) }]
+      });
+    } catch (err) {
+      console.warn("Failed to cancel native alarm:", err);
+    }
+  }
+
   await fetch(`/api/tasks/${id}/complete`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${token}` }
@@ -148,6 +184,17 @@ async function deleteTask(id) {
   if (!confirm("Are you sure you want to delete this task?")) return;
   if (ringingTaskId === id) {
     dismissAlarm();
+  }
+  
+  // CANCEL NATIVE OS ALARM IF IT EXISTS (FOR APK ONLY)
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    try {
+      await window.Capacitor.Plugins.LocalNotifications.cancel({
+        notifications: [{ id: Number(id) }]
+      });
+    } catch (err) {
+      console.warn("Failed to cancel native alarm:", err);
+    }
   }
   
   try {

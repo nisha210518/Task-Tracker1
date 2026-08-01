@@ -8,6 +8,7 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 class UserProfileResponse(BaseModel):
+    id: int # ADD THIS LINE TO PREVENT THE BROWSER FROM RECEIVING 'UNDEFINED' USER IDs [2.5]
     username: str
     email: str
     xp: int

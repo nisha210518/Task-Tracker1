@@ -8,11 +8,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Load Chart.js for Burn-down Performance and Gantt Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Load Google Fonts - Inter [1] -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Nuclear Font Enforcer: Overrides casual phone system fonts with clean, professional Inter [1] -->
+  <style>
+    body, button, select, input, textarea, div, p, h1, h2, h3, h4, span, a {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    }
+  </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative">
   
   <!-- Navigation Header -->
-  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center shadow-md">
+  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center shadow">
     <div class="flex items-center gap-4">
       <a href="dashboard.html" class="text-xs text-slate-400 hover:text-white transition">&larr; Back to Home</a>
       <h1 class="text-lg font-black text-emerald-500 tracking-wider">TEAM WORKSPACE</h1>
@@ -49,13 +60,13 @@
     <!-- Right Columns: Active Collaboration Panel (Hidden until a group is clicked) -->
     <div id="activeWorkspace" class="hidden lg:col-span-2 space-y-6 animate-fade-in">
       
-      <!-- Group Info, Members, and Integrations -->
+      <!-- Group Info & Invites -->
       <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6 shadow-lg">
         <div class="flex flex-col justify-between h-full space-y-4">
           <div class="flex justify-between items-start gap-4">
             <div>
               <h2 id="activeGroupName" class="text-2xl font-black text-emerald-400 font-sans">Group Name</h2>
-              <p class="text-xs text-slate-400 mt-1 font-mono">Invite Code: <span id="activeInviteCode" class="font-mono text-indigo-400 select-all font-semibold">------</span></p>
+              <p class="text-xs text-slate-400 mt-1">Invite Code: <span id="activeInviteCode" class="font-mono text-indigo-400 select-all font-semibold">------</span></p>
             </div>
             <!-- Delete Group Button (Only visible to Group Owner) -->
             <button id="deleteGroupBtn" onclick="deleteGroup()" class="hidden bg-red-950/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-900/40 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition">
@@ -131,7 +142,7 @@
               </select>
             </div>
             
-            <!-- Timeline Date selections for Gantt Charts -->
+            <!-- Timeline Date selections for Gantt Charts [2.12] -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Start Day (1-6)</label>

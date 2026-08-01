@@ -98,28 +98,41 @@ async function loadGroups() {
       if (!list) return;
 
       if (!Array.isArray(data)) {
-        list.innerHTML = `<p class="text-xs text-red-400">Error loading groups (Invalid format).</p>`;
+        list.innerHTML = `<p class="text-xs text-red-400 p-4">Error loading groups.</p>`;
         return;
       }
 
       list.innerHTML = data.map(g => {
         const escapedName = g.name.replace(/'/g, "\\'");
-        const isOwner = (Number(currentUserId) == Number(g.owner_id));
+        
+        // TYPE-SAFE CHECK: Ensures the delete button shows for the creator [2.5]
+        const isOwner = (Number(currentUserId) === Number(g.owner_id));
         
         return `
           <div class="relative group w-full mb-2">
-            <button onclick="selectGroup(${g.id}, '${escapedName}', '${g.invite_code}', ${g.owner_id}, '${g.webhook_url || ''}')" class="w-full text-left p-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition pr-16">
-              <h4 class="font-bold text-xs">${g.name}</h4>
+            <!-- Group Selection Button -->
+            <button onclick="selectGroup(${g.id}, '${escapedName}', '${g.invite_code}', ${g.owner_id}, '${g.webhook_url || ''}')" 
+                    class="w-full text-left p-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl transition-all duration-200 pr-20 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+                  ${g.name.substring(0, 1).toUpperCase()}
+                </div>
+                <h4 class="font-bold text-sm text-slate-200 truncate">${g.name}</h4>
+              </div>
             </button>
             
+            <!-- THE DELETE BUTTON: Shows only for the Group Admin (Owner) -->
             ${isOwner ? `
-              <button onclick="event.stopPropagation(); deleteGroupDirect(${g.id})" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-[10px] font-bold bg-red-950/60 hover:bg-red-600 text-red-400 hover:text-white border border-red-900/50 rounded-lg px-2 py-1.5 transition duration-200 focus:outline-none">
-                Delete
+              <button onclick="event.stopPropagation(); deleteGroupDirect(${g.id})" 
+                      class="absolute right-3 top-1/2 -translate-y-1/2 bg-red-950/30 hover:bg-red-600 text-red-500 hover:text-white p-2 rounded-xl transition duration-200 border border-red-900/20">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
               </button>
             ` : ""}
           </div>
         `;
-      }).join("") || `<p class="text-xs text-slate-500 py-4 text-center">You are not in any groups yet.</p>`;
+      }).join("") || `<p class="text-xs text-slate-500 py-8 text-center uppercase tracking-widest font-bold opacity-50">No groups found</p>`;
     }
   } catch (err) {
     console.error("Error loading groups list:", err);
@@ -172,7 +185,9 @@ async function deleteGroup() {
 
 // Delete targeted group directly from the sidebar (Admin only)
 async function deleteGroupDirect(groupId) {
-  if (!confirm("Are you sure you want to permanently delete this group?")) return;
+  // 1. Ask for confirmation [1]
+  const confirmed = confirm("⚠️ Are you sure? This will permanently delete the group and all its tasks for everyone.");
+  if (!confirmed) return;
   
   try {
     const res = await fetch(`/api/groups/${groupId}`, {
@@ -181,20 +196,30 @@ async function deleteGroupDirect(groupId) {
     });
     
     if (res.ok) {
-      if (currentGroupId === groupId) {
-        const workspace = document.getElementById("activeWorkspace");
-        if (workspace) workspace.classList.add("hidden");
+      // 2. If the deleted group was the one we were looking at, hide the workspace panel
+      if (Number(currentGroupId) === Number(groupId)) {
+        document.getElementById("activeWorkspace").classList.add("hidden");
         currentGroupId = null;
       }
+      
+      // 3. Refresh the sidebar list [3]
       await loadGroups();
+      
+      // 4. Show a success toast
+      if (typeof showToast === "function") showToast("Group deleted successfully.");
     } else {
       const data = await res.json();
-      alert(data.detail || "Failed to delete group.");
+      alert("Error: " + (data.detail || "Could not delete group."));
     }
   } catch (err) {
-    console.error("Error deleting group directly:", err);
+    console.error("Delete request failed:", err);
+    alert("Network error: Could not reach server.");
   }
 }
+
+// Ensure these are accessible to the HTML onclick buttons [1]
+window.deleteGroupDirect = deleteGroupDirect;
+window.deleteGroup = deleteGroup;
 
 // Save Discord Webhook URL (Admin only)
 async function saveWebhookUrl() {

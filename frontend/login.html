@@ -4,39 +4,71 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TaskFlow - Login</title>
+  <!-- Load Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen">
-  <div class="max-w-md w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl">
-    <h1 className="text-center font-black text-2xl tracking-wider text-indigo-500 mb-6">TASKFLOW LOGIN</h1>
+<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen" style="font-family: 'Inter', sans-serif;">
+  
+  <!-- Card uses w-[90%] for proportional 5% side gaps on all mobile screen widths [1] -->
+  <div class="w-[90%] max-w-md bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-2xl transition duration-300">
+    <h1 class="text-center font-black text-2xl tracking-wider text-indigo-500 mb-6 uppercase">TASKFLOW LOGIN</h1>
     <div id="errorBox" class="hidden bg-red-950/40 text-red-300 border border-red-800 text-xs p-3 rounded-lg mb-4"></div>
     
     <form id="loginForm" class="space-y-4">
       <div>
         <label class="block text-xs uppercase text-slate-400 font-bold">Email Address</label>
-        <input id="email" type="email" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input id="email" type="email" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
       </div>
       <div>
         <label class="block text-xs uppercase text-slate-400 font-bold">Password</label>
-        <input id="password" type="password" required class="w-full mt-1 p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <div class="relative mt-1">
+          <input id="password" type="password" required class="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition pr-10">
+          <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white focus:outline-none">
+            <!-- SVG Eye Icon [2.1] -->
+            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-lg transition">Log In</button>
+      <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-lg transition shadow-md">Log In</button>
     </form>
     <div class="mt-4 text-center text-sm">
       <a href="signup.html" class="text-indigo-400 hover:underline">New to TaskFlow? Sign up here</a>
     </div>
   </div>
 
-<script>
-    // Check if we are in "Add Secondary Account" mode
+  <script>
     const urlParams = new URLSearchParams(window.location.search);
     const isAddingAccount = urlParams.get("add_account") === "true";
     
     const token = localStorage.getItem("token");
-    // Only redirect automatically if we are NOT trying to add a new account
     if (token && !isAddingAccount) {
       window.location.href = "dashboard.html";
     }
+
+    function togglePasswordVisibility() {
+      const passwordInput = document.getElementById("password");
+      const eyeIcon = document.getElementById("eyeIcon");
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.815 7.815 3 3m-3-3a3 3 0 1 1-4.243-4.243m1.89 1.89-3.418-3.418" />
+        `;
+      } else {
+        passwordInput.type = "password";
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        `;
+      }
+    }
+    window.togglePasswordVisibility = togglePasswordVisibility;
 
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -54,26 +86,18 @@
         const data = await res.json();
         
         if (res.ok) {
-          // Retrieve existing accounts
           let accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
-          
-          // Use the email prefix or a mock username if username is not returned
           const mockUsername = email.split('@')[0];
           
-          // Remove duplicate if already logged in with this username
           accounts = accounts.filter(acc => acc.username !== mockUsername);
-          
-          // Set all other accounts to inactive
           accounts.forEach(acc => acc.active = false);
           
-          // Append the new active account
           accounts.push({
             username: mockUsername,
             token: data.access_token,
             active: true
           });
           
-          // Save list and sync active token
           localStorage.setItem("taskflow_accounts", JSON.stringify(accounts));
           localStorage.setItem("token", data.access_token);
           
