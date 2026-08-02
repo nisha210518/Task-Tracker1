@@ -17,14 +17,12 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
   </style>
-  <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden">
   
-  <!-- Semi-transparent backdrop overlay for mobile bottom-sheet focus -->
- <!-- REPLACE THIS BACKDROP LINE IN frontend/dashboard.html: -->
-  <!-- REPLACE THIS BACKDROP LINE IN frontend/dashboard.html: -->
-<div id="backdrop" onclick="toggleAccountMenu()" class="hidden fixed inset-0 bg-slate-950/80 z-40 transition-opacity duration-300" style="backdrop-filter: none !important; -webkit-backdrop-filter: none !important;"></div>
+  <!-- Transparent background overlay (no blur, completely clear and sharp) [1] -->
+  <div id="backdrop" onclick="toggleAccountMenu()" class="hidden fixed inset-0 bg-transparent z-40" style="backdrop-filter: none !important; -webkit-backdrop-filter: none !important;"></div>
+
   <!-- Header with Accounts Switcher (Responsive mobile padding) [1] -->
   <header class="bg-slate-900 border-b border-slate-800 py-4 px-4 md:px-6 flex justify-between items-center shadow-lg relative z-10">
     <h1 class="text-lg font-black text-indigo-500 tracking-widest">TASKFLOW</h1>
@@ -40,19 +38,20 @@
         <!-- RESPONSIVE SHEET: Slides up from bottom on mobile, acts as dropdown on desktop [1] -->
         <div id="accountDropdown" class="fixed bottom-0 left-0 right-0 max-h-[50vh] bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl p-6 space-y-4 z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col md:absolute md:top-full md:bottom-auto md:left-auto md:right-0 md:translate-y-0 md:max-h-none md:w-60 md:rounded-2xl md:border md:mt-2 md:p-3 md:space-y-2 md:shadow-xl md:hidden">
           
-          <!-- Mobile Drag Handle indicator (hidden on desktop) -->
+          <!-- Mobile Drag Handle indicator -->
           <div class="md:hidden w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-2"></div>
           
           <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold px-3 py-1.5 border-b border-slate-800">Switch Account</p>
           
-          <!-- Dynamic Accounts list will be injected here -->
+          <!-- Accounts List Container (Correctly Closed with </div> tag!) [1] -->
           <div id="accountsListContainer" class="space-y-1.5 md:space-y-0.5 max-h-48 overflow-y-auto pr-1"></div>
           
+          <!-- Action Buttons (With unique IDs corresponding to JavaScript bindings) [1] -->
           <div class="border-t border-slate-800 pt-3 md:pt-1.5 mt-1 space-y-1 md:space-y-0.5">
-            <button onclick="addAccountRedirect()" class="w-full text-left text-xs text-indigo-400 hover:bg-slate-800 font-bold px-3 py-2.5 md:py-2 rounded-xl md:rounded-lg transition focus:outline-none">
+            <button id="addAccountBtn" class="w-full text-left text-xs text-indigo-400 hover:bg-slate-800 font-bold px-3 py-2.5 md:py-2 rounded-xl md:rounded-lg transition focus:outline-none">
               + Add Account
             </button>
-            <button onclick="logoutActive()" class="w-full text-left text-xs text-red-400 hover:bg-slate-800 font-bold px-3 py-2.5 md:py-2 rounded-xl md:rounded-lg transition focus:outline-none">
+            <button id="logoutActiveBtn" class="w-full text-left text-xs text-red-400 hover:bg-slate-800 font-bold px-3 py-2.5 md:py-2 rounded-xl md:rounded-lg transition focus:outline-none">
               Logout Current
             </button>
           </div>
@@ -85,7 +84,7 @@
         </div>
       </a>
 
-      <!-- Option 2: Group Mode Card -->
+      <!-- Option 2: Group Workspace Card -->
       <a href="group.html" class="group bg-slate-900 hover:bg-emerald-950/20 border border-slate-800 hover:border-emerald-500/50 p-8 md:p-10 rounded-3xl flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 shadow-2xl min-h-[220px]">
         <div class="space-y-4">
           <div class="h-14 w-14 bg-emerald-600/10 text-emerald-400 flex items-center justify-center rounded-2xl text-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-md">👥</div>
@@ -158,31 +157,50 @@
     }
 
     function renderDropdownList() {
-      const container = document.getElementById("accountsListContainer");
-      const accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
-      const currentToken = localStorage.getItem("token");
+      try {
+        const container = document.getElementById("accountsListContainer");
+        if (!container) return;
 
-      container.innerHTML = accounts.map(acc => {
-        const isActive = acc.token === currentToken;
-        return `
-          <button onclick="switchAccount('${acc.username}')" class="w-full text-left text-xs px-3.5 py-3 md:py-2 rounded-xl md:rounded-lg flex justify-between items-center transition focus:outline-none ${isActive ? 'bg-indigo-600/10 text-indigo-400 font-bold border border-indigo-900/40' : 'hover:bg-slate-800 text-slate-300'}" ${isActive ? 'disabled' : ''}>
-            <div class="flex items-center gap-2.5">
-              <div class="h-6 w-6 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center font-bold text-[10px] uppercase">
-                ${acc.username.substring(0, 1)}
+        let accounts = [];
+        try {
+          accounts = JSON.parse(localStorage.getItem("taskflow_accounts") || "[]");
+        } catch (e) {
+          accounts = [];
+        }
+
+        if (!Array.isArray(accounts)) {
+          accounts = [];
+        }
+
+        const currentToken = localStorage.getItem("token");
+
+        container.innerHTML = accounts.map(acc => {
+          const username = acc.username || "user";
+          const initial = username.substring(0, 1).toUpperCase();
+          const isActive = acc.token === currentToken;
+
+          return `
+            <button onclick="event.stopPropagation(); switchAccount('${username}')" class="w-full text-left text-xs px-3.5 py-3 md:py-2 rounded-xl md:rounded-lg flex justify-between items-center transition focus:outline-none ${isActive ? 'bg-indigo-600/10 text-indigo-400 font-bold border border-indigo-900/40' : 'hover:bg-slate-800 text-slate-300'}" ${isActive ? 'disabled' : ''}>
+              <div class="flex items-center gap-2.5">
+                <div class="h-6 w-6 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center font-bold text-[10px] uppercase">
+                  ${initial}
+                </div>
+                <span>@${username}</span>
               </div>
-              <span>@${acc.username}</span>
-            </div>
-            
-            ${isActive ? `
-              <span class="bg-indigo-600 text-white rounded-full p-0.5 flex items-center justify-center shadow">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-3 h-3">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                </svg>
-              </span>
-            ` : ''}
-          </button>
-        `;
-      }).join("");
+              
+              ${isActive ? `
+                <span class="bg-indigo-600 text-white rounded-full p-0.5 flex items-center justify-center shadow">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-3 h-3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                </span>
+              ` : ''}
+            </button>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("Failed to render accounts switcher:", err);
+      }
     }
 
     function switchAccount(username) {
@@ -226,31 +244,33 @@
       window.location.href = "login.html";
     }
 
-    window.addEventListener("click", function(e) {
-      const dropdown = document.getElementById("accountDropdown");
-      const backdrop = document.getElementById("backdrop");
-      if (dropdown && !e.target.closest("header") && !e.target.closest("#backdrop")) {
-        const isMobile = window.innerWidth < 768;
-        if (isMobile) {
-          dropdown.classList.remove("translate-y-0");
-          dropdown.classList.add("translate-y-full");
-          backdrop.classList.add("hidden");
-        } else {
-          dropdown.classList.add("md:hidden");
-        }
-      }
-    });
+    // =========================================================================
+    // EXPLICIT EVENT LISTENERS (No inline overrides, fully robust) [1]
+    // =========================================================================
+    const addAccBtn = document.getElementById("addAccountBtn");
+    if (addAccBtn) {
+      addAccBtn.addEventListener("click", function(e) {
+        e.stopPropagation(); // Stops the click from bubbling up [1]
+        console.log("Add account button clicked!");
+        addAccountRedirect();
+      });
+    }
 
-    // =========================================================================
-    // EXPLICIT WINDOW BINDINGS (Forces mobile browsers to find the functions) [1]
-    // =========================================================================
+    const logActBtn = document.getElementById("logoutActiveBtn");
+    if (logActBtn) {
+      logActBtn.addEventListener("click", function(e) {
+        e.stopPropagation(); // Stops the click from bubbling up [1]
+        console.log("Logout current button clicked!");
+        logoutActive();
+      });
+    }
+
+    // Explicitly expose functions globally so HTML onclicks can execute
     window.toggleAccountMenu = toggleAccountMenu;
     window.switchAccount = switchAccount;
     window.addAccountRedirect = addAccountRedirect;
     window.logoutActive = logoutActive;
     window.logoutAll = logoutAll;
-
-    // Load active profile and sync accounts
 
     loadHeader();
   </script>

@@ -3,7 +3,7 @@ from database import Base
 
 class DBUser(Base):
     __tablename__ = "users"
-    __table_args__ = {'extend_existing': True} # Safe hot-reloading
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
@@ -12,6 +12,9 @@ class DBUser(Base):
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
     reputation_score = Column(Integer, default=100)
+    
+    # ADD THIS COLUMN TO STORE PUSH NOTIFICATION TOKEN:
+    push_subscription = Column(String, nullable=True)
 
 class DBGroup(Base):
     __tablename__ = "groups"

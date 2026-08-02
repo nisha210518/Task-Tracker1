@@ -10,7 +10,8 @@ from models import DBUser
 
 SECRET_KEY = "your-custom-local-secret-key-replace-it"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# Set the login session token to remain valid for 1 full year
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 365
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -21,7 +22,7 @@ class SignupSchema(BaseModel):
     password: str
 
 class LoginSchema(BaseModel):
-    email: str
+    username: str # Changed from email to username
     password: str
 
 def hash_password(password: str) -> str:
@@ -68,7 +69,8 @@ def signup(payload: SignupSchema, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(payload: LoginSchema, db: Session = Depends(get_db)):
-    user = db.query(DBUser).filter(DBUser.email == payload.email).first()
+    # Query database by Username instead of Email!
+    user = db.query(DBUser).filter(DBUser.username == payload.username).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
     

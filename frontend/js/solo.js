@@ -1,3 +1,55 @@
+// Register Service Worker and subscribe to Web Push [2]
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+  navigator.serviceWorker.register('sw.js')
+    .then(function(swReg) {
+      console.log('Service Worker is registered', swReg);
+      subscribeUserToPush(swReg);
+    })
+    .catch(function(error) {
+      console.error('Service Worker Error', error);
+    });
+}
+
+async function subscribeUserToPush(swReg) {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn('Notification permission denied by user.');
+      return;
+    }
+
+    // Standard public key matching our backend config [2]
+    const applicationServerKey = urlB64ToUint8Array("BD74Z9_1Z_8P2R_1Z_8P2R_1Z_8P2R_1Z_8P2");
+    const subscription = await swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: applicationServerKey
+    });
+
+    console.log('User is subscribed to Web Push:', subscription);
+
+    // Save the subscription JSON in the PostgreSQL database [1, 2]
+    await fetch("/api/users/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ subscription_json: JSON.stringify(subscription) })
+    });
+  } catch (err) {
+    console.warn('Failed to subscribe user to Web Push:', err);
+  }
+}
+
+// Utility to convert VAPID keys
+function urlB64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 const token = localStorage.getItem("token");
 if (!token) window.location.href = "login.html";
 

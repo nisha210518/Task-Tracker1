@@ -7,3 +7,4 @@ bcrypt
 pydantic
 email-validator
 pydantic-settings
+pywebpush

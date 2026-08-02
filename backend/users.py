@@ -42,3 +42,18 @@ def get_user_analytics(current_user: DBUser = Depends(get_current_user), db: Ses
         "overdue_tasks": overdue_tasks,
         "completion_rate": round(completion_rate, 1)
     }
+    
+# Add Pydantic validation schema at the top
+class SubscriptionSchema(BaseModel):
+    subscription_json: str
+
+# Save / Update Web Push Subscription for the current user
+@router.post("/subscribe")
+def save_push_subscription(payload: SubscriptionSchema, current_user: DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.push_subscription = payload.subscription_json
+    db.commit()
+    return {"status": "Subscribed successfully to Web Push Notifications"}
